@@ -1,0 +1,27 @@
+plugins {
+    id 'java'
+}
+
+group 'keycloak.authentication.authenticator'
+version '1.0'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+def keycloak_version = "15.0.0"
+
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+    implementation group: 'org.keycloak', name: 'keycloak-core', version: keycloak_version
+    implementation group: 'org.keycloak', name: 'keycloak-server-spi', version: keycloak_version
+    implementation group: 'org.keycloak', name: 'keycloak-server-spi-private', version: keycloak_version
+    implementation group: 'org.keycloak', name: 'keycloak-services', version: keycloak_version
+    implementation group: 'org.keycloak', name: 'keycloak-model-jpa', version: keycloak_version
+    implementation group: 'org.keycloak', name: 'keycloak-authz-policy-common', version: keycloak_version
+    implementation group: 'com.fasterxml.jackson.jaxrs', name: 'jackson-jaxrs-json-provider', version: '2.10.1'
+    implementation group: 'org.keycloak', name: 'keycloak-admin-client', version: keycloak_version
+    implementation group: 'org.keycloak', name: 'keycloak-model-infinispan', version: keycloak_version
+}
