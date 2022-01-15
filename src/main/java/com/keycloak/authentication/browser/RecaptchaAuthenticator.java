@@ -39,7 +39,7 @@ public class RecaptchaAuthenticator extends UsernamePasswordForm {
     @Override
     public void authenticate(AuthenticationFlowContext context) {
 
-        if(Objects.nonNull(context.getUser())){
+        if(configuredFor(context.getSession(), context.getRealm(), context.getUser())){
             UserLoginFailureModel userLoginFailures = context.getSession().loginFailures().getUserLoginFailure(context.getRealm(), context.getUser().getId());
 
             int numberOfFailures = Objects.nonNull(userLoginFailures) ? userLoginFailures.getNumFailures() : 0;
@@ -136,7 +136,7 @@ public class RecaptchaAuthenticator extends UsernamePasswordForm {
         return "google.com";
     }
 
-    protected boolean validateRecaptcha(AuthenticationFlowContext context, String captcha, String secret) {
+    private boolean validateRecaptcha(AuthenticationFlowContext context, String captcha, String secret) {
 
         CloseableHttpClient httpClient = context.getSession().getProvider(HttpClientProvider.class).getHttpClient();
         HttpPost post = new HttpPost("https://www." + getRecaptchaDomain(context.getAuthenticatorConfig()) + "/recaptcha/api/siteverify");
@@ -176,8 +176,7 @@ public class RecaptchaAuthenticator extends UsernamePasswordForm {
                 || captchaConfig.getConfig().get(SITE_SECRET) == null
         ) {
             form.addError(new FormMessage(null, Messages.RECAPTCHA_NOT_CONFIGURED));
-            //ToDo: null
-            return null;
+            return form.createLoginUsernamePassword();
         }
         String siteKey = captchaConfig.getConfig().get(SITE_KEY);
         form.setAttribute("recaptchaRequired", true);
