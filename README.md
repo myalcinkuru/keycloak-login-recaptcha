@@ -1,7 +1,8 @@
 
+
 # Keycloak Login Recaptcha
 
-![Example Login Screen](https://github.com/muhammedyalcin/keycloak-login-recaptcha-by-condition/blob/main/screenshots/login-sc.gif?raw=true)
+![Example Login Screen](https://github.com/muhammedyalcin/keycloak-login-recaptcha/blob/main/screenshots/login-sc.gif?raw=true)
  
 Keycloak supports the recaptcha in the registration flow but not in the login flow at this time. That's why this repository implements the conditional recaptcha execution  for the login flow.  The conditional recaptcha means that if the anyone tries to log-in already registered user with fault password, recaptcha being showed. `Max Login Failures`(How many failures before the reCaptcha showed) is configurable. To accomplish it, i extended the `UsernamePasswordForm` built-in keycloak execution. 
 
@@ -19,10 +20,10 @@ Not: The output is located as `build/libs/recaptcha-authenticator-1.0.jar`
 
 1. There are some changes should be done in the theme. Assuming that you don't have any [custom theme](https://www.keycloak.org/docs/latest/server_development/#_theme_selector) (using keycloak theme) you might  edit the base theme (recommendation is creating your own theme).  We have already modified [login.ftl](https://github.com/muhammedyalcin/keycloak-login-recaptcha-by-condition/blob/main/resources/login.ftl)  file. You can directly copy and overwrite to path `keycloak/themes/base/login/login.ftl` or if any custom theme was used, take the diff with [login.ftl](https://github.com/muhammedyalcin/keycloak-login-recaptcha-by-condition/blob/main/resources/login.ftl)  file with `keycloak/themes/base/login/login.ftl` and then apply the changes to your custom `login.ftl`. 
 2. Configure your login flow as below;
-![Example Login Flow](https://github.com/muhammedyalcin/keycloak-login-recaptcha-by-condition/blob/main/screenshots/loginflow.png?raw=true)
+![Example Login Flow](https://github.com/muhammedyalcin/keycloak-login-recaptcha/blob/main/screenshots/loginflow.png?raw=true)
 
 3. Add config to  the Recaptcha execution by clicking the `Actions -> Config` 
-![Recaptcha Execution Example Config](https://github.com/muhammedyalcin/keycloak-login-recaptcha-by-condition/blob/main/screenshots/recaptchaconfig.png?raw=true)
+![Recaptcha Execution Example Config](https://github.com/muhammedyalcin/keycloak-login-recaptcha/blob/main/screenshots/recaptchaconfig.png?raw=true)
 
 - Max Login Failures: How many failures before the reCaptcha showed.
 - Recaptcha Site Key: Google Recaptcha Site Key
