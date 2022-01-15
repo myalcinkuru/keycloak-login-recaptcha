@@ -34,3 +34,7 @@ Not: The output is located as `build/libs/recaptcha-authenticator-1.0.jar`
 ## Usage
 
 There might be situations that requires to ask recaptcha if any account log-in  attempt failed like blocking to the attacker to guess that account password with bot. 
+
+##  Acknowledgments
+
+[raptor-group](https://github.com/raptor-group/keycloak-login-recaptcha) repository was help me to came up here. If no condition needed you can use it  as well. 
