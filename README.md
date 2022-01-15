@@ -3,7 +3,7 @@
 
 ![Example Login Screen](https://github.com/muhammedyalcin/keycloak-login-recaptcha-by-condition/blob/main/screenshots/login-sc.gif?raw=true)
  
-Keycloak supports the recaptcha in the registration flow but not in the login flow at this time. That's why this repository implements the conditional recaptcha execution  for the login flow.  To accomplish it, i extended the `UsernamePasswordForm` built-in keycloak execution. 
+Keycloak supports the recaptcha in the registration flow but not in the login flow at this time. That's why this repository implements the conditional recaptcha execution  for the login flow.  The conditional recaptcha means that if the anyone tries to log-in already registered user with fault password, recaptcha being showed. `Max Login Failures`(How many failures before the reCaptcha showed) is configurable. To accomplish it, i extended the `UsernamePasswordForm` built-in keycloak execution. 
 
 
 ### Build With & Deploy To Keycloak
