@@ -18,7 +18,9 @@ import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.forms.login.freemarker.model.LoginBean;
 import org.keycloak.models.*;
 import org.keycloak.models.utils.FormMessage;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.services.ServicesLogger;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.util.JsonSerialization;
@@ -28,29 +30,18 @@ import javax.ws.rs.core.Response;
 import java.io.InputStream;
 import java.util.*;
 
-import static com.keycloak.authentication.browser.RecaptchaAuthenticatorFactory.MAX_FAILURE_CONFIG_NAME;
+import static com.keycloak.authentication.browser.UsernamePasswordFormRecaptchaAuthenticatorFactory.MAX_FAILURE_CONFIG_NAME;
 import static org.keycloak.authentication.forms.RegistrationRecaptcha.*;
 
 
-public class RecaptchaAuthenticator extends UsernamePasswordForm {
+public class UsernamePasswordFormRecaptchaAuthenticator extends UsernamePasswordForm {
 
-    private static final Logger logger = Logger.getLogger(RecaptchaAuthenticator.class);
+    private static final Logger logger = Logger.getLogger(UsernamePasswordFormRecaptchaAuthenticator.class);
+    private static final String RECAPTCHA_REQUIRED_AUTH_NOTE = "IsRecaptchaRequired";
 
     @Override
     public void authenticate(AuthenticationFlowContext context) {
-
-        if(configuredFor(context.getSession(), context.getRealm(), context.getUser())){
-            UserLoginFailureModel userLoginFailures = context.getSession().loginFailures().getUserLoginFailure(context.getRealm(), context.getUser().getId());
-
-            int numberOfFailures = Objects.nonNull(userLoginFailures) ? userLoginFailures.getNumFailures() : 0;
-            String maxFailure = AuthenticatorUtil.getConfigValue(context.getAuthenticatorConfig(), MAX_FAILURE_CONFIG_NAME, "4");
-
-            if(numberOfFailures >= Integer.valueOf(maxFailure)){
-                context.challenge(createUsernamePasswordWithRecaptchaLogin(context, context.form()));
-                return;
-            }
-        }
-        context.success();
+        super.authenticate(context);
     }
 
     @Override
@@ -61,43 +52,71 @@ public class RecaptchaAuthenticator extends UsernamePasswordForm {
             context.cancelLogin();
             return;
         }
+
+        String captcha = formData.getFirst(G_RECAPTCHA_RESPONSE);
+        String username = formData.getFirst(AuthenticationManager.FORM_USERNAME);
+        if (username != null) {
+
+            UserModel user = KeycloakModelUtils.findUserByNameOrEmail(context.getSession(), context.getRealm(), username.trim());
+
+            if (user != null) {
+
+                if (isUserTemporarilyDisabled(context, user)) return;
+                if (isRecaptchaRequired(context, user)) {
+
+                    context.getAuthenticationSession().setAuthNote(RECAPTCHA_REQUIRED_AUTH_NOTE, "true");
+                    if (Objects.nonNull(captcha)) {
+                        if (!isRecaptchaValid(context, captcha)) {
+                            logger.info("Recaptcha validation failed.");
+                            Response failureChallenge = challenge(context, "Recaptcha validation failed.", null);
+                            context.failureChallenge(AuthenticationFlowError.INVALID_CREDENTIALS, failureChallenge);
+                            return;
+                        }
+
+                    } else {
+                        context.forceChallenge(createUsernamePasswordWithRecaptchaLogin(context, context.form()));
+                        return;
+                    }
+                }
+            }
+        }
+
         if (!validateForm(context, formData)) {
             return;
         }
-
-        if (context.getUser() == null) {
-            logger.debug("Failing: failed with none user");
-            context.failure(AuthenticationFlowError.UNKNOWN_USER);
-            return;
-        }
-
-        boolean success = false;
         context.getEvent().detail(Details.REGISTER_METHOD, "form");
-
-        String captcha = formData.getFirst(G_RECAPTCHA_RESPONSE);
-        if (!Validation.isBlank(captcha)) {
-            AuthenticatorConfigModel captchaConfig = context.getAuthenticatorConfig();
-            String secret = captchaConfig.getConfig().get(SITE_SECRET);
-
-            success = validateRecaptcha(context, captcha, secret);
-        }
-        if (success) {
-            context.success();
-        } else {
-            logger.info("Recaptcha validation failed.");
-            failureChallenge(context, AuthenticationFlowError.INVALID_CREDENTIALS, "Recaptcha validation failed.");
-        }
+        context.success();
     }
 
-    private void failureChallenge(AuthenticationFlowContext context, AuthenticationFlowError authenticationFlowError, String errorMessage) {
+    private boolean isUserTemporarilyDisabled(AuthenticationFlowContext context, UserModel user) {
+
+        if (context.getRealm().isBruteForceProtected()) {
+            if (context.getProtector().isTemporarilyDisabled(context.getSession(), context.getRealm(), user)) {
+
+                Response challengeResponse = challenge(context, Messages.ACCOUNT_TEMPORARILY_DISABLED);
+                context.failure(AuthenticationFlowError.USER_TEMPORARILY_DISABLED, challengeResponse);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    protected Response challenge(AuthenticationFlowContext context, String error, String field) {
 
         LoginFormsProvider form = context.form()
                 .setExecution(context.getExecution().getId());
+        if (Objects.nonNull(error)) {
+            if (Objects.nonNull(field)) {
+                form.addError(new FormMessage(field, error));
+            } else {
+                form.setError(error);
+            }
+        }
+        String isRecaptchaRequiredStr = context.getAuthenticationSession().getAuthNote(RECAPTCHA_REQUIRED_AUTH_NOTE);
 
-        if (Objects.nonNull(errorMessage))
-            form.setError(errorMessage);
-
-        context.failureChallenge(authenticationFlowError, createUsernamePasswordWithRecaptchaLogin(context, form));
+        return "true".equals(isRecaptchaRequiredStr) ?
+                createUsernamePasswordWithRecaptchaLogin(context, form) : createLoginForm(form);
     }
 
     @Override
@@ -124,6 +143,24 @@ public class RecaptchaAuthenticator extends UsernamePasswordForm {
 
     }
 
+
+    private boolean isRecaptchaValid(AuthenticationFlowContext context, String captcha) {
+        AuthenticatorConfigModel captchaConfig = context.getAuthenticatorConfig();
+        String secret = captchaConfig.getConfig().get(SITE_SECRET);
+
+        return !Validation.isBlank(captcha) && validateRecaptcha(context, captcha, secret);
+    }
+
+    private boolean isRecaptchaRequired(AuthenticationFlowContext context, UserModel user) {
+        UserLoginFailureModel userLoginFailures = context.getSession().loginFailures().getUserLoginFailure(context.getRealm(), user.getId());
+
+        int numberOfFailures = Objects.nonNull(userLoginFailures) ? userLoginFailures.getNumFailures() : 0;
+        String maxFailure = AuthenticatorUtil.getConfigValue(context.getAuthenticatorConfig(), MAX_FAILURE_CONFIG_NAME, "4");
+
+        return numberOfFailures >= Integer.valueOf(maxFailure);
+    }
+
+
     private String getRecaptchaDomain(AuthenticatorConfigModel config) {
         Boolean useRecaptcha = Optional.ofNullable(config)
                 .map(AuthenticatorConfigModel::getConfig)
@@ -136,7 +173,7 @@ public class RecaptchaAuthenticator extends UsernamePasswordForm {
         return "google.com";
     }
 
-    private boolean validateRecaptcha(AuthenticationFlowContext context, String captcha, String secret) {
+    protected boolean validateRecaptcha(AuthenticationFlowContext context, String captcha, String secret) {
 
         CloseableHttpClient httpClient = context.getSession().getProvider(HttpClientProvider.class).getHttpClient();
         HttpPost post = new HttpPost("https://www." + getRecaptchaDomain(context.getAuthenticatorConfig()) + "/recaptcha/api/siteverify");

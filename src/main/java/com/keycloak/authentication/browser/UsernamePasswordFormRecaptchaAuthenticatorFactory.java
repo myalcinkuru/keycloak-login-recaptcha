@@ -11,10 +11,10 @@ import java.util.List;
 
 import static org.keycloak.authentication.forms.RegistrationRecaptcha.*;
 
-public class RecaptchaAuthenticatorFactory extends UsernamePasswordFormFactory {
+public class UsernamePasswordFormRecaptchaAuthenticatorFactory extends UsernamePasswordFormFactory {
 
     protected static final String MAX_FAILURE_CONFIG_NAME = "maxFailures";
-    private final RecaptchaAuthenticator SINGLETON = new RecaptchaAuthenticator();
+    private final UsernamePasswordFormRecaptchaAuthenticator SINGLETON = new UsernamePasswordFormRecaptchaAuthenticator();
 
     public static final String PROVIDER_ID = "recaptcha-username-password-form";
 
@@ -63,7 +63,7 @@ public class RecaptchaAuthenticatorFactory extends UsernamePasswordFormFactory {
 
     @Override
     public String getDisplayType() {
-        return "Recaptcha";
+        return "Username Password Form With Recaptcha";
     }
 
 

@@ -1,1 +1,1 @@
-com.keycloak.authentication.browser.RecaptchaAuthenticatorFactory
+com.keycloak.authentication.browser.UsernamePasswordFormRecaptchaAuthenticatorFactory
