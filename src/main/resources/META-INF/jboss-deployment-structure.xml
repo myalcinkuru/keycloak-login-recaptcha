@@ -8,8 +8,6 @@
         <module name="org.keycloak.keycloak-server-spi-private" ></module>
         <module name="org.keycloak.keycloak-services" ></module>
         <module name="org.keycloak.keycloak-model-jpa"></module>
-        <module name="com.appcircle.keycloak.domain-extension"/>
-        <module name="com.appcircle.keycloak.common-operations"/>
         <module name="com.fasterxml.jackson.jaxrs.jackson-jaxrs-json-provider"></module>
         <module name="com.fasterxml.jackson.core.jackson-core"/>
         <module name="com.fasterxml.jackson.core.jackson-annotations"/>

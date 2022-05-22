@@ -32,6 +32,17 @@ Not: The output is located as `build/libs/recaptcha-authenticator-1.0.jar`
 4.  Navigate to `Realm Settings->Security Defenses`. Set  `X-Frame-Options` as `ALLOW-FROM https://www.google.com` and `Content-Security-Policy` as `frame-src 'self' https://www.google.com; frame-ancestors 'self'; object-src 'none';`
 5. Enabled the brute force attack. [For detail](https://github.com/keycloak/keycloak-documentation/blob/main/server_admin/topics/threat/brute-force.adoc). If you already did that, no action needed. 
 
+
+### Docker
+
+To try and see the configurations, you can run the docker image locally.
+
+`docker container run -p 8080:8080  muhammedyalcin57/keycloak-recaptcha:v2.0.0 -b 0.0.0.0 -Dkeycloak.import=/opt/jboss/resources/realm-export.json`
+
+Username: admin
+Password: admin
+
+
 ## Usage
 
 There might be situations that requires to ask recaptcha if any account log-in  attempt failed like blocking to the attacker to guess that account password with bot. 
